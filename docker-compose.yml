@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: moderation
+      POSTGRES_PASSWORD: moderation
+      POSTGRES_DB: moderation_db
+    ports:
+      - "5438:5438"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moderation -d moderation_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  moderation_queue:
+    build: ./moderation_queue
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: "host=postgres port=5438 dbname=moderation_db user=moderation password=moderation"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  dailymotion_proxy:
+    build: ./dailymotion_proxy
+    ports:
+      - "8002:8002"
+
+volumes:
+  postgres_data:
