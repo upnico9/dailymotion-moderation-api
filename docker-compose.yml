@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: moderation
       POSTGRES_DB: moderation_db
     ports:
-      - "5438:5438"
+      - "5438:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,7 +20,7 @@ services:
     ports:
       - "8001:8001"
     environment:
-      DATABASE_URL: "host=postgres port=5438 dbname=moderation_db user=moderation password=moderation"
+      DATABASE_URL: "host=postgres port=5432 dbname=moderation_db user=moderation password=moderation"
     depends_on:
       postgres:
         condition: service_healthy
