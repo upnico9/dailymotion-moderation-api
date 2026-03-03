@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 
 from infrastructure.database import create_connection_pool, initialize_database, get_connection
+from infrastructure.error_handler import register_error_handlers
 
 
 @asynccontextmanager
@@ -19,6 +20,7 @@ async def lifespan(application: FastAPI):
 
 
 app = FastAPI(title="Moderation Queue API", lifespan=lifespan)
+register_error_handlers(app)
 
 
 @app.get("/health")
