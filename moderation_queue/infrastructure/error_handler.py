@@ -1,10 +1,12 @@
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from domain.exceptions import (
     AuthorizationError,
+    ForbiddenError,
     InvalidRequestError,
     InvalidStatusError,
     VideoAlreadyExistsError,
@@ -16,6 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 def register_error_handlers(app: FastAPI) -> None:
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(request: Request, exc: RequestValidationError):
+        return JSONResponse(status_code=400, content={"error": "Invalid request body"})
+
     @app.exception_handler(VideoNotFoundError)
     async def video_not_found_handler(request: Request, exc: VideoNotFoundError):
         return JSONResponse(status_code=404, content={"error": str(exc)})
@@ -35,6 +41,10 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AuthorizationError)
     async def authorization_handler(request: Request, exc: AuthorizationError):
         return JSONResponse(status_code=401, content={"error": str(exc)})
+
+    @app.exception_handler(ForbiddenError)
+    async def forbidden_handler(request: Request, exc: ForbiddenError):
+        return JSONResponse(status_code=403, content={"error": str(exc)})
 
     @app.exception_handler(InvalidRequestError)
     async def invalid_request_handler(request: Request, exc: InvalidRequestError):

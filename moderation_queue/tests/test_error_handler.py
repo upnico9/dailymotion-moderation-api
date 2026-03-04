@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 from domain.exceptions import (
     AuthorizationError,
+    ForbiddenError,
     InvalidRequestError,
     InvalidStatusError,
     VideoAlreadyExistsError,
@@ -36,6 +37,10 @@ def _create_test_app() -> FastAPI:
     @app.get("/raise/authorization")
     def raise_authorization():
         raise AuthorizationError("Authorization header required")
+
+    @app.get("/raise/forbidden")
+    def raise_forbidden():
+        raise ForbiddenError("Video 123 is not assigned to alice")
 
     @app.get("/raise/invalid_request")
     def raise_invalid_request():
@@ -76,6 +81,11 @@ class TestErrorHandlers:
         response = client.get("/raise/authorization")
         assert response.status_code == 401
         assert response.json() == {"error": "Authorization header required"}
+
+    def test_forbidden_error_returns_403(self):
+        response = client.get("/raise/forbidden")
+        assert response.status_code == 403
+        assert response.json() == {"error": "Video 123 is not assigned to alice"}
 
     def test_invalid_request_returns_400(self):
         response = client.get("/raise/invalid_request")

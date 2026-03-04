@@ -7,7 +7,7 @@ from psycopg2.errors import UniqueViolation
 from domain.entities import Video, VideoLog
 from domain.events import VideoAdded, VideoAssigned, VideoFlagged
 from domain.exceptions import (
-    AuthorizationError,
+    ForbiddenError,
     InvalidStatusError,
     VideoAlreadyExistsError,
     VideoNotFoundError,
@@ -153,7 +153,7 @@ class TestFlagVideo:
         video = _make_video(assigned_moderator="bob")
         video_repo.get_by_id.return_value = video
 
-        with pytest.raises(AuthorizationError, match="not assigned to alice"):
+        with pytest.raises(ForbiddenError, match="not assigned to alice"):
             service.flag_video("abc123", "spam", "alice")
 
         video_repo.flag.assert_not_called()
@@ -163,7 +163,7 @@ class TestFlagVideo:
         video = _make_video(assigned_moderator=None)
         video_repo.get_by_id.return_value = video
 
-        with pytest.raises(AuthorizationError, match="not assigned to alice"):
+        with pytest.raises(ForbiddenError, match="not assigned to alice"):
             service.flag_video("abc123", "spam", "alice")
 
         video_repo.flag.assert_not_called()

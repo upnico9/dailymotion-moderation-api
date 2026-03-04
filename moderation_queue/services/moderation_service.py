@@ -5,7 +5,7 @@ from psycopg2.errors import UniqueViolation
 from domain.entities import Video
 from domain.events import VideoAdded, VideoAssigned, VideoFlagged
 from domain.exceptions import (
-    AuthorizationError,
+    ForbiddenError,
     InvalidStatusError,
     VideoAlreadyExistsError,
     VideoNotFoundError,
@@ -81,7 +81,7 @@ class ModerationService:
             raise VideoNotFoundError(f"Video {video_id} not found")
 
         if video.assigned_moderator != moderator:
-            raise AuthorizationError(
+            raise ForbiddenError(
                 f"Video {video_id} is not assigned to {moderator}"
             )
 
