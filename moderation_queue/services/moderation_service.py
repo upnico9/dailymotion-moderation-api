@@ -13,34 +13,34 @@ from domain.exceptions import (
 )
 from domain.value_objects import ModerationStatus
 from infrastructure.event_dispatcher import EventDispatcher
-from repositories.video_log_repository import VideoLogRepository
 from repositories.video_repository import VideoRepository
+from services.video_log_service import VideoLogService
 
 
 class ModerationService:
     def __init__(
         self,
         video_repo: VideoRepository,
-        video_log_repo: VideoLogRepository,
+        video_log_service: VideoLogService,
         event_dispatcher: EventDispatcher,
     ):
         self._video_repo = video_repo
-        self._video_log_repo = video_log_repo
+        self._video_log_service = video_log_service
         self._event_dispatcher = event_dispatcher
         self._register_event_listeners()
 
     def _register_event_listeners(self) -> None:
         self._event_dispatcher.listen(
             VideoAdded,
-            lambda e: self._video_log_repo.create(e.video_id, "pending", None),
+            lambda e: self._video_log_service.log_added(e.video_id),
         )
         self._event_dispatcher.listen(
             VideoAssigned,
-            lambda e: self._video_log_repo.create(e.video_id, "pending", e.moderator),
+            lambda e: self._video_log_service.log_assigned(e.video_id, e.moderator),
         )
         self._event_dispatcher.listen(
             VideoFlagged,
-            lambda e: self._video_log_repo.create(e.video_id, e.status.value, e.moderator),
+            lambda e: self._video_log_service.log_flagged(e.video_id, e.status.value, e.moderator),
         )
 
     def add_video(self, video_id: str) -> Video:
