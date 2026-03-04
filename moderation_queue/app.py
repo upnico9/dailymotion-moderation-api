@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,7 +43,21 @@ async def lifespan(application: FastAPI):
     pool.closeall()
 
 
-app = FastAPI(title="Moderation Queue API", lifespan=lifespan)
+app = FastAPI(
+    title="Moderation Queue API",
+    description="Backend service for the Dailymotion video moderation tool. "
+    "Manages a FIFO queue of videos to moderate, supports concurrent moderators, "
+    "and tracks the full moderation history for audit purposes.",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=config.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 register_error_handlers(app)
 app.include_router(moderation_router)
 
