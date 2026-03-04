@@ -4,6 +4,8 @@ Backend de modération vidéo pour Dailymotion. Deux microservices :
 - **Moderation Queue** (port 8001) — gestion de la file de modération, assignation FIFO, historique d'audit
 - **Dailymotion API Proxy** (port 8002) — proxy vers l'API publique Dailymotion avec cache in-memory
 
+Les schémas d'architecture détaillés (diagrammes de flux, couches, base de données, événements…) sont disponibles dans [architecture_diagrams.md](architecture_diagrams.md).
+
 ---
 
 ## Prérequis
