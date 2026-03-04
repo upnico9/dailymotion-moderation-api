@@ -7,8 +7,8 @@ from psycopg2 import pool
 
 def create_connection_pool(
     database_url: str,
-    min_connections: int = 2,
-    max_connections: int = 10,
+    min_connections: int,
+    max_connections: int,
 ) -> pool.ThreadedConnectionPool:
     return pool.ThreadedConnectionPool(
         min_connections, max_connections, dsn=database_url

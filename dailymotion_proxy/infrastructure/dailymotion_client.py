@@ -12,8 +12,8 @@ class DailymotionClient:
 
     def __init__(
         self,
-        base_url: str = "https://api.dailymotion.com",
-        timeout: int = 5,
+        base_url: str,
+        timeout: int,
         http_get: Callable = requests.get,
     ):
         self._base_url = base_url

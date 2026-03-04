@@ -1,8 +1,14 @@
-import os
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+
+import config
 from infrastructure.database import create_connection_pool, initialize_database, get_connection
 from infrastructure.error_handler import register_error_handlers
 from infrastructure.event_dispatcher import EventDispatcher
@@ -15,11 +21,11 @@ from routes.moderation_routes import router as moderation_router
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    database_url = os.environ.get(
-        "DATABASE_URL",
-        "host=localhost port=5438 dbname=moderation_db user=moderation password=moderation",
+    pool = create_connection_pool(
+        config.DATABASE_URL,
+        min_connections=config.DB_POOL_MIN,
+        max_connections=config.DB_POOL_MAX,
     )
-    pool = create_connection_pool(database_url)
     initialize_database(pool)
     application.state.connection_pool = pool
 
@@ -43,10 +49,4 @@ app.include_router(moderation_router)
 
 @app.get("/health")
 def health(request: Request):
-    try:
-        with get_connection(request.app.state.connection_pool) as connection:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT 1")
-        return {"status": "ok", "database": "connected"}
-    except Exception as error:
-        return {"status": "error", "database": str(error)}
+    return {"status": "ok"}

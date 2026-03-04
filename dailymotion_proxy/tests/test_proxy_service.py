@@ -11,7 +11,7 @@ class TestProxyService:
 
     def setup_method(self):
         self.mock_client = MagicMock()
-        self.cache = VideoCache(default_ttl=300)
+        self.cache = VideoCache(default_ttl=300, max_size=1000)
         self.service = ProxyService(client=self.mock_client, cache=self.cache)
         self.sample_data = {
             "title": "Dailymotion Spirit Movie",
