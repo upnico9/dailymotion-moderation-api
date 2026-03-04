@@ -23,6 +23,11 @@ class AuthorizationError(Exception):
     pass
 
 
+class ForbiddenError(Exception):
+    """Authenticated but not allowed to perform this action"""
+    pass
+
+
 class InvalidRequestError(Exception):
     """Bad request"""
     pass
