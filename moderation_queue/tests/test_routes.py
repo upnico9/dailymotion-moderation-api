@@ -62,8 +62,8 @@ class TestGetVideo:
 
     def test_get_video_empty_queue(self, client):
         response = client.get("/get_video", headers=_auth_header("bob"))
-        assert response.status_code == 404
-        assert "error" in response.json()
+        assert response.status_code == 204
+        assert response.content == b""
 
     def test_get_video_idempotent(self, client):
         client.post("/add_video", json={"video_id": "idem001"})

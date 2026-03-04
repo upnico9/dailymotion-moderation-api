@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import Response
 
-from domain.exceptions import VideoNotFoundError
 from middleware.auth import get_current_moderator
 from routes.schemas import AddVideoRequest, FlagVideoRequest
 from services.moderation_service import ModerationService
@@ -32,7 +32,7 @@ def get_video(
 ):
     video = service.get_video(moderator)
     if not video:
-        raise VideoNotFoundError("No pending video available")
+        return Response(status_code=204)
     return {"video_id": video.video_id}
 
 
