@@ -38,7 +38,7 @@ class VideoRepository:
                 row = cur.fetchone()
                 return self._row_to_entity(row) if row else None
 
-    def get_next_pending(self) -> Video | None:
+    def get_next_pending_and_assign(self, moderator: str) -> Video | None:
         with get_connection(self._pool) as conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -51,15 +51,14 @@ class VideoRepository:
                     """
                 )
                 row = cur.fetchone()
-                return self._row_to_entity(row) if row else None
-
-    def assign(self, video_id: str, moderator: str) -> None:
-        with get_connection(self._pool) as conn:
-            with conn.cursor() as cur:
+                if not row:
+                    return None
+                video_id = row[0]
                 cur.execute(
-                    "UPDATE videos_queue SET assigned_moderator = %s, updated_at = NOW() WHERE video_id = %s",
+                    "UPDATE videos_queue SET assigned_moderator = %s, updated_at = NOW() WHERE video_id = %s RETURNING *",
                     (moderator, video_id),
                 )
+                return self._row_to_entity(cur.fetchone())
 
     def flag(self, video_id: str, status: str) -> None:
         with get_connection(self._pool) as conn:

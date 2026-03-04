@@ -61,11 +61,10 @@ class ModerationService:
         if video:
             return video
 
-        video = self._video_repo.get_next_pending()
+        video = self._video_repo.get_next_pending_and_assign(moderator)
         if not video:
             return None
 
-        self._video_repo.assign(video.video_id, moderator)
         self._event_dispatcher.dispatch(
             VideoAssigned(
                 video_id=video.video_id,
@@ -73,7 +72,7 @@ class ModerationService:
                 occurred_at=datetime.now(timezone.utc),
             )
         )
-        return self._video_repo.get_by_id(video.video_id)
+        return video
 
     def flag_video(self, video_id: str, status: str, moderator: str) -> Video:
         video = self._video_repo.get_by_id(video_id)

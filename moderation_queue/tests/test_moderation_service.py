@@ -91,27 +91,24 @@ class TestGetVideo:
         video_log_service.log_assigned.assert_not_called()
 
     def test_assigns_next_pending_and_creates_log(self, service, video_repo, video_log_service):
-        pending_video = _make_video()
         assigned_video = _make_video(assigned_moderator="alice")
 
         video_repo.get_assigned.return_value = None
-        video_repo.get_next_pending.return_value = pending_video
-        video_repo.get_by_id.return_value = assigned_video
+        video_repo.get_next_pending_and_assign.return_value = assigned_video
 
         result = service.get_video("alice")
 
         assert result == assigned_video
-        video_repo.assign.assert_called_once_with("abc123", "alice")
+        video_repo.get_next_pending_and_assign.assert_called_once_with("alice")
         video_log_service.log_assigned.assert_called_once_with("abc123", "alice")
 
     def test_returns_none_when_queue_empty(self, service, video_repo, video_log_service):
         video_repo.get_assigned.return_value = None
-        video_repo.get_next_pending.return_value = None
+        video_repo.get_next_pending_and_assign.return_value = None
 
         result = service.get_video("alice")
 
         assert result is None
-        video_repo.assign.assert_not_called()
         video_log_service.log_assigned.assert_not_called()
 
 

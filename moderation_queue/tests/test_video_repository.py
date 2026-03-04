@@ -41,62 +41,14 @@ class TestGetById:
         assert video_repo.get_by_id("unknown") is None
 
 
-class TestGetNextPending:
-    def test_fifo_order(self, video_repo):
+class TestGetAssigned:
+    def test_get_assigned_returns_assigned_video(self, video_repo):
         video_repo.add("v001")
-        video_repo.add("v002")
-        video_repo.add("v003")
-        video = video_repo.get_next_pending()
-        assert video.video_id == "v001"
-
-    def test_skips_assigned(self, video_repo):
-        video_repo.add("v001")
-        video_repo.assign("v001", "john.doe")
-        video_repo.add("v002")
-        video = video_repo.get_next_pending()
-        assert video.video_id == "v002"
-
-    def test_skips_flagged(self, video_repo):
-        video_repo.add("v001")
-        video_repo.flag("v001", "spam")
-        video = video_repo.get_next_pending()
-        assert video is None
-
-    def test_returns_second_when_first_flagged(self, video_repo):
-        video_repo.add("v001")
-        video_repo.add("v002")
-        video_repo.flag("v001", "spam")
-        video = video_repo.get_next_pending()
-        assert video.video_id == "v002"
-
-    def test_all_assigned_returns_none(self, video_repo):
-        video_repo.add("v001")
-        video_repo.add("v002")
-        video_repo.assign("v001", "alice")
-        video_repo.assign("v002", "bob")
-        assert video_repo.get_next_pending() is None
-
-    def test_empty_queue(self, video_repo):
-        assert video_repo.get_next_pending() is None
-
-
-class TestAssign:
-    def test_assign_and_get_assigned(self, video_repo):
-        video_repo.add("v001")
-        video_repo.assign("v001", "john.doe")
+        video_repo.get_next_pending_and_assign("john.doe")
         video = video_repo.get_assigned("john.doe")
         assert video is not None
         assert video.video_id == "v001"
         assert video.assigned_moderator == "john.doe"
-
-    def test_assign_updates_updated_at(self, video_repo):
-        video = video_repo.add("v001")
-        original_updated_at = video.updated_at
-        time.sleep(0.01)
-        video_repo.assign("v001", "john.doe")
-        updated_video = video_repo.get_by_id("v001")
-        assert updated_video.updated_at > original_updated_at
-        assert updated_video.created_at == video.created_at
 
     def test_get_assigned_no_match(self, video_repo):
         video_repo.add("v001")
@@ -104,7 +56,7 @@ class TestAssign:
 
     def test_get_assigned_returns_none_after_flag(self, video_repo):
         video_repo.add("v001")
-        video_repo.assign("v001", "john.doe")
+        video_repo.get_next_pending_and_assign("john.doe")
         video_repo.flag("v001", "spam")
         assert video_repo.get_assigned("john.doe") is None
 
@@ -219,3 +171,59 @@ class TestSkipLocked:
         cur2.close()
         db_pool.putconn(conn1)
         db_pool.putconn(conn2)
+
+
+class TestGetNextPendingAndAssign:
+    def test_fifo_order(self, video_repo):
+        video_repo.add("v001")
+        video_repo.add("v002")
+        video_repo.add("v003")
+        video = video_repo.get_next_pending_and_assign("alice")
+        assert video.video_id == "v001"
+        assert video.assigned_moderator == "alice"
+
+    def test_returns_none_when_empty(self, video_repo):
+        assert video_repo.get_next_pending_and_assign("alice") is None
+
+    def test_skips_already_assigned(self, video_repo):
+        video_repo.add("v001")
+        video_repo.add("v002")
+        video_repo.get_next_pending_and_assign("bob")
+        video = video_repo.get_next_pending_and_assign("alice")
+        assert video.video_id == "v002"
+        assert video.assigned_moderator == "alice"
+
+    def test_skips_flagged(self, video_repo):
+        video_repo.add("v001")
+        video_repo.flag("v001", "spam")
+        assert video_repo.get_next_pending_and_assign("alice") is None
+
+    def test_returns_second_when_first_flagged(self, video_repo):
+        video_repo.add("v001")
+        video_repo.add("v002")
+        video_repo.flag("v001", "spam")
+        video = video_repo.get_next_pending_and_assign("alice")
+        assert video.video_id == "v002"
+
+    def test_all_assigned_returns_none(self, video_repo):
+        video_repo.add("v001")
+        video_repo.add("v002")
+        video_repo.get_next_pending_and_assign("alice")
+        video_repo.get_next_pending_and_assign("bob")
+        assert video_repo.get_next_pending_and_assign("carol") is None
+
+    def test_updates_updated_at(self, video_repo):
+        video = video_repo.add("v001")
+        original_updated_at = video.updated_at
+        time.sleep(0.01)
+        assigned = video_repo.get_next_pending_and_assign("alice")
+        assert assigned.updated_at > original_updated_at
+        assert assigned.created_at == video.created_at
+
+    def test_atomic_select_and_assign(self, video_repo):
+        video_repo.add("v001")
+        result = video_repo.get_next_pending_and_assign("alice")
+        assert result.assigned_moderator == "alice"
+        
+        video = video_repo.get_by_id("v001")
+        assert video.assigned_moderator == "alice"
